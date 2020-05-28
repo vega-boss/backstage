@@ -17,7 +17,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import CatalogPage from './CatalogPage';
-import { wrapInThemedTestApp } from '@backstage/test-utils';
+import { wrapInTestApp } from '@backstage/test-utils';
 import { ComponentFactory } from '../../data/component';
 
 const testComponentFactory: ComponentFactory = {
@@ -32,9 +32,7 @@ describe('CatalogPage', () => {
   // https://github.com/mbrn/material-table/issues/1293
   it('should render', async () => {
     const rendered = render(
-      wrapInThemedTestApp(
-        <CatalogPage componentFactory={testComponentFactory} />,
-      ),
+      wrapInTestApp(<CatalogPage componentFactory={testComponentFactory} />),
     );
     expect(
       await rendered.findByText('Keep track of your software'),

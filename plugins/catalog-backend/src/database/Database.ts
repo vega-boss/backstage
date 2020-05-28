@@ -346,6 +346,17 @@ export class Database {
     return toEntityResponse(rows[0]);
   }
 
+  async removeEntity(
+    tx: Knex.Transaction<any, any>,
+    uid: string,
+  ): Promise<void> {
+    const result = await tx<DbEntitiesRow>('entities').where({ id: uid }).del();
+
+    if (!result) {
+      throw new NotFoundError(`Found no entity with ID ${uid}`);
+    }
+  }
+
   async addLocation(location: AddDatabaseLocation): Promise<DbLocationsRow> {
     return await this.database.transaction<DbLocationsRow>(async tx => {
       const existingLocation = await tx<DbLocationsRow>('locations')

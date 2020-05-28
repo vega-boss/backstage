@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-import { Entity } from '@backstage/catalog-model';
-import { Database } from '../database';
+import { Entity, EntityPolicy } from '@backstage/catalog-model';
+import { Database, DbEntityRequest } from '../database';
 import { EntitiesCatalog, EntityFilters } from './types';
 
 export class DatabaseEntitiesCatalog implements EntitiesCatalog {
-  constructor(private readonly database: Database) {}
+  constructor(
+    private readonly database: Database,
+    private readonly policy: EntityPolicy,
+  ) {}
 
   async entities(filters?: EntityFilters): Promise<Entity[]> {
     const items = await this.database.transaction(tx =>
@@ -56,5 +59,20 @@ export class DatabaseEntitiesCatalog implements EntitiesCatalog {
     );
 
     return matches.length ? matches[0].entity : undefined;
+  }
+
+  async addEntity(entity: Entity): Promise<Entity> {
+    await this.policy.enforce(entity);
+    return await this.database.transaction(async tx => {
+      const request: DbEntityRequest = { entity };
+      const response = await this.database.addEntity(tx, request);
+      return response.entity;
+    });
+  }
+
+  async removeEntityByUid(uid: string): Promise<void> {
+    return await this.database.transaction(async tx => {
+      await this.database.removeEntity(tx, uid);
+    });
   }
 }

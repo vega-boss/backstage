@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { getVoidLogger } from '@backstage/backend-common';
-import { Entity } from '@backstage/catalog-model';
+import { getVoidLogger, NotFoundError } from '@backstage/backend-common';
+import type { Entity } from '@backstage/catalog-model';
 import express from 'express';
 import request from 'supertest';
 import { EntitiesCatalog, Location, LocationsCatalog } from '../catalog';
@@ -25,6 +25,8 @@ class MockEntitiesCatalog implements EntitiesCatalog {
   entities = jest.fn();
   entityByUid = jest.fn();
   entityByName = jest.fn();
+  addEntity = jest.fn();
+  removeEntityByUid = jest.fn();
 }
 
 class MockLocationsCatalog implements LocationsCatalog {
@@ -156,6 +158,67 @@ describe('createRouter', () => {
 
       expect(response.status).toEqual(404);
       expect(response.text).toMatch(/name/);
+    });
+  });
+
+  describe('addEntity', () => {
+    it('can add', async () => {
+      const entity: Entity = {
+        apiVersion: 'a',
+        kind: 'b',
+        metadata: {
+          name: 'c',
+          namespace: 'd',
+        },
+      };
+      const catalog = new MockEntitiesCatalog();
+      catalog.addEntity.mockResolvedValue(entity);
+
+      const router = await createRouter({
+        entitiesCatalog: catalog,
+        logger: getVoidLogger(),
+      });
+
+      const app = express().use(router);
+      const response = await request(app).post('/entities').send(entity);
+
+      expect(response.status).toEqual(201);
+      expect(response.body).toEqual(expect.objectContaining(entity));
+      expect(catalog.addEntity).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('removeEntity', () => {
+    it('can remove', async () => {
+      const catalog = new MockEntitiesCatalog();
+      catalog.removeEntityByUid.mockResolvedValue(undefined);
+
+      const router = await createRouter({
+        entitiesCatalog: catalog,
+        logger: getVoidLogger(),
+      });
+
+      const app = express().use(router);
+      const response = await request(app).delete('/entities/by-uid/apa');
+
+      expect(response.status).toEqual(204);
+      expect(catalog.removeEntityByUid).toHaveBeenCalledTimes(1);
+    });
+
+    it('responds with a 404 for missing entities', async () => {
+      const catalog = new MockEntitiesCatalog();
+      catalog.removeEntityByUid.mockRejectedValue(new NotFoundError('nope'));
+
+      const router = await createRouter({
+        entitiesCatalog: catalog,
+        logger: getVoidLogger(),
+      });
+
+      const app = express().use(router);
+      const response = await request(app).delete('/entities/by-uid/apa');
+
+      expect(response.status).toEqual(404);
+      expect(catalog.removeEntityByUid).toHaveBeenCalledTimes(1);
     });
   });
 

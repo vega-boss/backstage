@@ -54,4 +54,13 @@ export class StaticEntitiesCatalog implements EntitiesCatalog {
     }
     return lodash.cloneDeep(item);
   }
+
+  async addEntity(entity: Entity): Promise<Entity> {
+    this._entities.push(entity);
+    return entity;
+  }
+
+  async removeEntityByUid(uid: string): Promise<void> {
+    this._entities = this._entities.filter(e => e.metadata.uid !== uid);
+  }
 }

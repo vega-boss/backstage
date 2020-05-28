@@ -35,6 +35,8 @@ export type EntitiesCatalog = {
     namespace: string | undefined,
     name: string,
   ): Promise<Entity | undefined>;
+  addEntity(entity: Entity): Promise<Entity>;
+  removeEntityByUid(uid: string): Promise<void>;
 };
 
 //

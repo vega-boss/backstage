@@ -57,11 +57,6 @@ const ComponentPage: FC<ComponentPageProps> = ({
   const componentName = match.params.name;
   const errorApi = useApi<ErrorApi>(errorApiRef);
 
-  if (componentName === '') {
-    history.push('/catalog');
-    return null;
-  }
-
   const catalogRequest = useAsync(() =>
     componentFactory.getComponentByName(match.params.name),
   );
@@ -73,7 +68,12 @@ const ComponentPage: FC<ComponentPageProps> = ({
         history.push('/catalog');
       }, REDIRECT_DELAY);
     }
-  }, [catalogRequest.error]);
+  }, [catalogRequest.error, errorApi, history]);
+
+  if (componentName === '') {
+    history.push('/catalog');
+    return null;
+  }
 
   const removeComponent = async () => {
     setConfirmationDialogOpen(false);
